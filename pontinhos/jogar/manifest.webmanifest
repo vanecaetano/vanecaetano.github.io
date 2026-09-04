@@ -1,0 +1,16 @@
+{
+  "name": "Pontinhos",
+  "short_name": "Pontinhos",
+  "description": "Jogo dos pontinhos coloridão para crianças. Sozinho contra o robô ou com um amigo no mesmo celular.",
+  "lang": "pt-BR",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3ECFB",
+  "theme_color": "#F3ECFB",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

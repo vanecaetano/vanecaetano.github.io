@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Pontinhos</title>
+  <meta name="description" content="Jogo dos pontinhos coloridão para crianças. Jogue sozinho contra o robô ou com um amigo no mesmo celular.">
+  <meta name="theme-color" content="#F3ECFB">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pontinhos">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Gradientes das canetas VIP (glitter). Ficam AQUI, fora do #board, de propósito:
+       render() reescreve o innerHTML do #board a cada jogada, e defs lá dentro fariam a
+       animação recomeçar do zero a cada risquinho. O brilho é animado por CSS (stop-color
+       com atraso escalonado por parada, ver styles.css). Não usar display:none — o SVG
+       precisa continuar "renderizável" para servir de tinta; por isso 0×0 + absolute. -->
+  <svg class="penfx-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- userSpaceOnUse é obrigatório aqui: o padrão (objectBoundingBox) quebra em
+           risquinho reto, porque uma linha horizontal tem caixa de altura ZERO e o
+           gradiente fica indefinido — a aresta some da tela. Em user space as
+           coordenadas são as do viewBox do #board (0 0 288 288), e com spreadMethod
+           "repeat" a faixa de brilho se repete pelo tabuleiro inteiro. -->
+      <linearGradient id="gl-ouro" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="104" y2="66" spreadMethod="repeat">
+        <stop offset="0"/><stop offset="0.25"/><stop offset="0.5"/><stop offset="0.75"/><stop offset="1"/>
+      </linearGradient>
+      <linearGradient id="gl-prata" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="104" y2="66" spreadMethod="repeat">
+        <stop offset="0"/><stop offset="0.25"/><stop offset="0.5"/><stop offset="0.75"/><stop offset="1"/>
+      </linearGradient>
+      <linearGradient id="gl-rosa" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="104" y2="66" spreadMethod="repeat">
+        <stop offset="0"/><stop offset="0.25"/><stop offset="0.5"/><stop offset="0.75"/><stop offset="1"/>
+      </linearGradient>
+      <linearGradient id="gl-galaxia" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="104" y2="66" spreadMethod="repeat">
+        <stop offset="0"/><stop offset="0.25"/><stop offset="0.5"/><stop offset="0.75"/><stop offset="1"/>
+      </linearGradient>
+      <linearGradient id="gl-arco" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="150" y2="95" spreadMethod="repeat">
+        <stop offset="0"/><stop offset="0.2"/><stop offset="0.4"/><stop offset="0.6"/><stop offset="0.8"/><stop offset="1"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="app">
+
+    <!-- MENU -->
+    <div class="scr active" id="scr-menu">
+      <button class="sound-toggle sound-fab" data-i18n-aria="a11y.soundOff" aria-label="Desligar som">🔊</button>
+      <button class="lang-fab" id="langBtn" data-i18n-aria="a11y.lang" aria-label="Escolher idioma">🌐</button>
+      <div class="logo-badge">
+        <svg width="72" height="72" viewBox="0 0 120 120" aria-hidden="true">
+          <g transform="translate(60 60) scale(1.2) translate(-60 -60) rotate(-5 60 60)">
+            <rect x="31" y="33.5" width="60" height="60" rx="9" fill="#8C6FE0" opacity=".16"/>
+            <rect x="30" y="30" width="60" height="60" rx="9" fill="#FDFBFF"/>
+            <line x1="30" y1="30" x2="90" y2="30" stroke="#4F9BEB" stroke-width="6.5" stroke-linecap="round"/>
+            <line x1="30" y1="30" x2="30" y2="90" stroke="#4F9BEB" stroke-width="6.5" stroke-linecap="round"/>
+            <line x1="90" y1="30" x2="90" y2="90" stroke="#F07AA6" stroke-width="6.5" stroke-linecap="round"/>
+            <line x1="30" y1="90" x2="90" y2="90" stroke="#F07AA6" stroke-width="6.5" stroke-linecap="round"/>
+            <g fill="#B9AF98">
+              <circle cx="30" cy="30" r="5"/><circle cx="90" cy="30" r="5"/>
+              <circle cx="30" cy="90" r="5"/><circle cx="90" cy="90" r="5"/>
+            </g>
+            <circle cx="49.5" cy="55.5" r="4.9" fill="#453F58"/>
+            <circle cx="70.5" cy="55.5" r="4.9" fill="#453F58"/>
+            <circle cx="51.2" cy="53.8" r="1.6" fill="#FFFFFF"/>
+            <circle cx="72.2" cy="53.8" r="1.6" fill="#FFFFFF"/>
+            <circle cx="43.7" cy="68" r="4.3" fill="#F5A9C4" opacity=".9"/>
+            <circle cx="76.3" cy="68" r="4.3" fill="#F5A9C4" opacity=".9"/>
+            <path d="M49.7 66 q10.3 9 20.6 0" fill="none" stroke="#453F58" stroke-width="3.7" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="menu-title"><span class="b">Ponti</span><span class="p">nhos</span></div>
+      <div class="menu-sub" data-i18n="menu.sub">Como você quer jogar hoje?</div>
+      <button class="btn-big btn-solo" id="btnSolo"><span class="ico">🤖</span> <span data-i18n="menu.solo">Jogar sozinho</span> <span class="arw">→</span></button>
+      <button class="btn-big btn-friend" id="btnFriend"><span class="ico">🐱🐰</span> <span data-i18n="menu.friend">Jogar com amigo</span> <span class="arw">→</span></button>
+      <button class="btn-big btn-online" id="btnOnline"><span class="ico">🌐</span> <span data-i18n="menu.online">Jogar online</span> <span class="arw">→</span></button>
+      <div class="menu-foot" data-i18n-html="menu.foot">🐱🐰 Com amigo: dois no mesmo celular<br>🌐 Online: cada um no seu</div>
+      <div class="menu-credit">♪ "Fluffing a Duck" — Kevin MacLeod (incompetech.com) · CC BY 4.0</div>
+    </div>
+
+    <!-- SETUP -->
+    <div class="scr" id="scr-setup">
+      <div class="setup-head">
+        <button class="back-btn" id="backBtn" data-i18n-aria="a11y.back" aria-label="Voltar">←</button>
+        <h2 id="setupTitle" data-i18n="setup.title">Preparar jogo</h2>
+      </div>
+      <div class="setup-body">
+        <div>
+          <div class="pslot p1" style="margin-bottom:10px">
+            <button class="ava-btn" id="ava1">🐱</button>
+            <div class="info"><input class="nm-in" id="nm1" value="Você" maxlength="12"><div class="pen-row" id="pen1row"></div></div>
+          </div>
+          <div class="pslot p2">
+            <button class="ava-btn" id="ava2">🐰</button>
+            <div class="info"><input class="nm-in" id="nm2" value="Robô" maxlength="12"><div class="tip" id="tip2" data-i18n="setup.tipRobot">O robô joga contra você</div><div class="pen-row" id="pen2row"></div></div>
+          </div>
+          <label class="robo-toggle" id="roboToggleWrap" style="display:none">
+            <input type="checkbox" id="roboChk">
+            <span class="rt-txt"><span data-i18n="setup.includeRobot">🤖 Incluir o robô</span> <small data-i18n="setup.includeRobotSub">— vira um jogo de 3</small></span>
+            <span class="rt-switch" aria-hidden="true"></span>
+          </label>
+          <div class="pslot p3" id="slot3" style="display:none; margin-top:10px">
+            <button class="ava-btn" id="ava3">🤖</button>
+            <div class="info"><input class="nm-in" id="nm3" value="Robô" maxlength="12"><div class="tip" data-i18n="setup.tip3rd">Entra como 3º jogador</div><div class="pen-row" id="pen3row"></div></div>
+          </div>
+          <!-- Rotulagem exigida pelo programa Famílias: diz que o 🔒 abre um ANÚNCIO -->
+          <div class="ad-legend" id="penLegend" style="display:none"><span class="ad-tag" data-i18n="ad.badge">Anúncio</span><span data-i18n="ad.legendPen">🔒 = ver um anúncio em vídeo para ganhar a caneta</span></div>
+        </div>
+        <div id="diffBox">
+          <div class="field-label" data-i18n="setup.diff">Dificuldade do robô</div>
+          <div class="pill-row">
+            <button class="pill on" data-diff="facil"><span data-i18n="diff.easy">Fácil</span><small data-i18n="diff.easySub">bom pra começar</small></button>
+            <button class="pill" data-diff="medio"><span data-i18n="diff.med">Médio</span><small data-i18n="diff.medSub">já sabe jogar</small></button>
+            <button class="pill" data-diff="dificil"><span data-i18n="diff.hard">Difícil</span><small data-i18n="diff.hardSub">o robô é craque</small></button>
+          </div>
+        </div>
+        <div>
+          <div class="field-label" data-i18n="setup.size">Tamanho do tabuleiro</div>
+          <div class="pill-row">
+            <button class="pill" data-size="4"><span data-i18n="size.small">Pequeno</span><small data-i18n="size.smallSub">rapidinho</small></button>
+            <button class="pill on" data-size="5"><span data-i18n="size.med">Médio</span><small data-i18n="size.medSub">equilibrado</small></button>
+            <button class="pill" data-size="6"><span data-i18n="size.big">Grande</span><small data-i18n="size.bigSub">desafio</small></button>
+          </div>
+        </div>
+      </div>
+      <div class="setup-foot">
+        <button class="btn-start" id="startBtn" data-i18n="setup.start">Começar! 🎉</button>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="scr" id="scr-game">
+      <div class="g-top" id="gTop"></div>
+      <div class="turn-banner" id="turnBanner"></div>
+      <div class="turn-timer" id="turnTimer" style="display:none"></div>
+      <div class="progress" id="progress"></div>
+      <div class="board-wrap" id="boardWrap">
+        <svg id="board" viewBox="0 0 288 288" data-i18n-aria="a11y.board" aria-label="Tabuleiro"></svg>
+      </div>
+      <div class="g-foot">
+        <button id="menuBtn" data-i18n="game.menu">🏠 Menu</button>
+        <button id="restartBtn" data-i18n="game.restart">🔄 Reiniciar</button>
+        <button class="sound-toggle sound-mini" data-i18n-aria="a11y.soundOff" aria-label="Desligar som">🔊</button>
+      </div>
+    </div>
+
+    <!-- LOBBY (online) -->
+    <div class="scr" id="scr-lobby">
+      <div class="setup-head">
+        <button class="back-btn" id="lobbyBack" data-i18n-aria="a11y.back" aria-label="Voltar">←</button>
+        <h2 data-i18n="lobby.title">Jogar online</h2>
+      </div>
+      <div class="setup-body" id="lobbyGate">
+        <div>
+          <div class="field-label" data-i18n="lobby.yourChar">Seu personagem</div>
+          <div class="pslot">
+            <button class="ava-btn" id="lobbyAva">🐱</button>
+            <div class="info">
+              <div class="gen-nick" id="genNick">Gato Veloz</div>
+              <div class="tip" data-i18n="lobby.tapAnimal">Toque no bichinho para trocar o animal</div>
+            </div>
+            <button class="dice-btn" id="diceBtn" data-i18n-aria="a11y.reroll" aria-label="Sortear outro nome">🎲</button>
+          </div>
+        </div>
+        <button class="btn-start" id="nickBtn" data-i18n="lobby.enter">Entrar no lobby 🌐</button>
+        <div class="menu-foot" id="lobbyStatus" style="margin:0 auto"></div>
+      </div>
+      <div class="setup-body" id="lobbyMain" style="display:none">
+        <div>
+          <div class="field-label" data-i18n="lobby.openRooms">Salas abertas</div>
+          <div class="list" id="roomList"></div>
+          <button class="btn-start" id="createRoomBtn" style="margin-top:12px" data-i18n="lobby.createRoom">Criar sala ✨</button>
+          <button class="btn-code" id="codeBtn" data-i18n="lobby.byCode">🗝️ Sala de um amigo — entrar com código</button>
+        </div>
+        <div>
+          <div class="field-label" data-i18n="lobby.whoOnline">Quem está online</div>
+          <div class="chips" id="peopleList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALA (online) -->
+    <div class="scr" id="scr-room">
+      <div class="setup-head">
+        <button class="back-btn" id="roomBack" data-i18n-aria="a11y.leaveRoom" aria-label="Sair da sala">←</button>
+        <h2 id="roomTitle" data-i18n="room.title">Sala</h2>
+      </div>
+      <div class="setup-body">
+        <div class="room-info" id="roomInfo"></div>
+        <div class="code-box" id="roomCodeBox">
+          <div class="cb-label" data-i18n="room.codeLabel">Código da sala — fale para os amigos entrarem</div>
+          <div class="cb-emojis" id="roomCodeEmojis"></div>
+          <div class="cb-words" id="roomCodeWords"></div>
+        </div>
+        <div class="room-wins" id="roomWins" style="display:none"></div>
+        <div class="list" id="roomSlots"></div>
+      </div>
+      <!-- rodapé fixo: o botão de ação não pode depender de scroll (ver styles.css) -->
+      <div class="room-foot">
+        <button class="btn-start" id="readyBtn" data-i18n="room.imReady">Estou pronto! ✅</button>
+        <button class="btn-start" id="startMatchBtn" style="display:none" data-i18n="setup.start">Começar! 🎉</button>
+      </div>
+    </div>
+
+    <!-- Modal criar sala -->
+    <div class="win modal" id="createModal">
+      <div class="wtitle" data-i18n="create.title">Criar sala</div>
+      <div class="modal-body">
+        <div class="field-label" data-i18n="create.howMany">Quantos jogadores?</div>
+        <div class="pill-row" id="mpRow">
+          <button class="pill on" data-mp="2">2<small data-i18n="create.mp2">uma dupla</small></button>
+          <button class="pill" data-mp="3">3<small data-i18n="create.mp3">trio</small></button>
+          <button class="pill" data-mp="4">4<small data-i18n="create.mp4">turma</small></button>
+        </div>
+        <div class="field-label" style="margin-top:16px" data-i18n="setup.size">Tamanho do tabuleiro</div>
+        <div class="pill-row" id="szRow">
+          <button class="pill" data-sz="4"><span data-i18n="size.small">Pequeno</span><small data-i18n="size.smallSub">rapidinho</small></button>
+          <button class="pill on" data-sz="5"><span data-i18n="size.med">Médio</span><small data-i18n="size.medSub">equilibrado</small></button>
+          <button class="pill" data-sz="6"><span data-i18n="size.big">Grande</span><small data-i18n="size.bigSub">desafio</small></button>
+        </div>
+        <label class="robo-toggle" style="margin-top:16px">
+          <input type="checkbox" id="secretChk">
+          <span class="rt-txt"><span data-i18n="create.secret">🤫 Sala secreta</span> <small data-i18n="create.secretSub">— não aparece na lista, só entra quem souber o código</small></span>
+          <span class="rt-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+      <div class="wbtns">
+        <button class="again" id="createGo" data-i18n="create.go">Criar ✨</button>
+        <button class="tomenu" id="createCancel" data-i18n="create.cancel">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Modal entrar com código -->
+    <div class="win modal" id="codeModal">
+      <div class="wtitle" data-i18n="code.title">Sala de um amigo</div>
+      <div class="modal-body">
+        <div class="field-label" data-i18n="code.tap3">Toque os 3 bichinhos do código</div>
+        <div class="code-display">
+          <span class="code-slot" id="codeSlot0"></span>
+          <span class="code-slot" id="codeSlot1"></span>
+          <span class="code-slot" id="codeSlot2"></span>
+          <button class="code-del" id="codeDel" data-i18n-aria="a11y.erase" aria-label="Apagar">⌫</button>
+        </div>
+        <div class="cb-words" id="codeHint" data-i18n="code.example">ex.: raposa · panda · estrela</div>
+        <div class="emoji-pad" id="codePad"></div>
+      </div>
+      <div class="wbtns">
+        <button class="tomenu" id="codeCancel" data-i18n="create.cancel">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Modal escolher bichinho (com pacotes bônus destraváveis por vídeo premiado) -->
+    <div class="win modal" id="avaModal">
+      <div class="wtitle" data-i18n="ava.title">Escolha o bichinho</div>
+      <div class="modal-body">
+        <div class="ad-legend" id="avaLegend" style="display:none"><span class="ad-tag" data-i18n="ad.badge">Anúncio</span><span data-i18n="ad.legendAva">❓ = ver um anúncio em vídeo para ganhar</span></div>
+        <div class="emoji-pad" id="avaPad"></div>
+      </div>
+      <div class="wbtns">
+        <button class="tomenu" id="avaCancel" data-i18n="ava.close">Fechar</button>
+      </div>
+    </div>
+
+    <!-- Modal de idioma -->
+    <div class="win modal" id="langModal">
+      <div class="wtitle" data-i18n="lang.title">Idioma</div>
+      <div class="modal-body">
+        <div class="lang-list" id="langList"></div>
+      </div>
+      <div class="wbtns">
+        <button class="tomenu" id="langCancel" data-i18n="ava.close">Fechar</button>
+      </div>
+    </div>
+
+    <!-- Modal de aviso antes do vídeo premiado (opt-in obrigatório — público infantil) -->
+    <div class="win modal" id="adModal">
+      <div class="ad-tag big" data-i18n="ad.badge">Anúncio</div>
+      <div class="wtitle" id="adModalTitle" data-i18n="ad.title">Ver um anúncio e ganhar um prêmio?</div>
+      <div class="modal-body">
+        <div class="ad-modal-text" id="adModalText"></div>
+      </div>
+      <div class="wbtns">
+        <button class="again" id="adGo" data-i18n="ad.watch">Assistir 🎬</button>
+        <button class="tomenu" id="adNo" data-i18n="ad.no">Agora não</button>
+      </div>
+    </div>
+
+    <!-- dado 3D de abertura (sorteio de quem começa, partida online) -->
+    <div class="dice-overlay" id="diceOverlay">
+      <div class="dice-title" data-i18n="dice.rolling">🎲 Sorteando quem começa…</div>
+      <div class="dice-scene">
+        <div class="dice-fly" id="diceFly">
+          <div class="dice-cube" id="diceCube"></div>
+        </div>
+      </div>
+      <div class="dice-result" id="diceResult"></div>
+    </div>
+
+    <!-- aviso de queda (partida online) -->
+    <div class="net-banner" id="netBanner" style="display:none"></div>
+
+    <!-- Rótulo do banner nativo: fica logo acima da faixa reservada para ele, dentro da
+         WebView. Exigência de rotulagem do programa Famílias (ver MONETIZACAO.md §3.3). -->
+    <div class="ad-slot-label" id="adSlotLabel" hidden data-i18n="ad.badge">Anúncio</div>
+
+    <!-- toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- WIN overlay -->
+    <div class="win" id="win">
+      <div class="cup" id="winCup">🏆</div>
+      <div class="wtitle" id="winTitle" data-i18n="win.you">Você venceu!</div>
+      <div class="wsc" id="winScore">6 × 3 quadradinhos</div>
+      <div class="wbtns">
+        <button class="again" id="winAgain" data-i18n="win.again">Jogar de novo</button>
+        <button class="tomenu" id="winMenu" data-i18n="win.menu">Voltar ao menu</button>
+      </div>
+      <!-- oferta opcional de vídeo premiado (só aparece no app, se ainda houver prêmio) -->
+      <button class="ad-offer" id="adOffer" style="display:none"></button>
+    </div>
+
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/vendor/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/ads-config.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/ads.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/online.js"></script>
+</body>
+</html>

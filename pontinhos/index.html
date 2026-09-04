@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>Jogo dos Pontinhos — jogue grátis no navegador ou no celular</title>
+<meta name="description" content="Jogo dos pontinhos (dots and boxes) para crianças de 6 a 12 anos. Jogue grátis no navegador, sozinho contra o robô, com um amigo no mesmo celular ou online com até 4 jogadores. Sem cadastro.">
+<link rel="canonical" href="https://vanecaetano.github.io/pontinhos/">
+<meta name="theme-color" content="#F3ECFB">
+<link rel="icon" href="jogar/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="jogar/icon.svg">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Jogo dos Pontinhos">
+<meta property="og:title" content="Jogo dos Pontinhos — jogue grátis no navegador">
+<meta property="og:description" content="Ligue os pontinhos, feche os quadradinhos e ganhe. Sozinho contra o robô, com um amigo no mesmo celular ou online com até 4 jogadores.">
+<meta property="og:url" content="https://vanecaetano.github.io/pontinhos/">
+<meta property="og:image" content="https://vanecaetano.github.io/pontinhos/img/1-jogo.png">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Jogo dos Pontinhos — jogue grátis no navegador">
+<meta name="twitter:description" content="Ligue os pontinhos, feche os quadradinhos e ganhe. Grátis, sem cadastro.">
+<meta name="twitter:image" content="https://vanecaetano.github.io/pontinhos/img/1-jogo.png">
+
+<style>
+:root{
+  --bg1:#F3ECFB; --bg2:#E9F5F1; --bg3:#FDEFE6;
+  --surface:#FFFFFF; --ink:#4C4560; --muted:#7d768d; --line:#ECE6F3;
+  --accent:#8C6FE0; --accent-ink:#fff;
+  --pen1:#4F9BEB; --pen2:#F07AA6; --pen3:#34B58F; --pen4:#A98BEA;
+  --shadow:0 20px 46px -22px rgba(90,60,140,.4);
+  --radius:20px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg1:#191426; --bg2:#141F1D; --bg3:#241D33;
+    --surface:#241F33; --ink:#EDE8F7; --muted:#A79FBC; --line:#3A3350;
+    --accent:#A98BEA;
+    --shadow:0 20px 46px -22px rgba(0,0,0,.7);
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink);
+  font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2) 55%,var(--bg3));
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(30px,6vw,46px);letter-spacing:-.02em}
+h2{font-size:clamp(22px,4vw,30px);margin-top:0}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+
+header{text-align:center;padding:56px 0 8px}
+.logo{font-size:64px;line-height:1;margin-bottom:12px}
+.sub{font-size:clamp(17px,2.6vw,20px);color:var(--muted);max-width:34ch;margin:0 auto 28px}
+
+.cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:15px 26px;border-radius:999px;text-decoration:none;font-weight:700;font-size:17px;
+  border:2px solid transparent;transition:transform .12s ease;
+}
+.btn:active{transform:translateY(1px)}
+.btn-main{background:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow)}
+.btn-alt{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.note{font-size:14px;color:var(--muted);margin-bottom:40px}
+
+section{padding:36px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.grid h3{font-size:18px;margin-bottom:.3em}
+.grid p{font-size:15px;color:var(--muted);margin:0}
+.emoji{font-size:30px;line-height:1;display:block;margin-bottom:10px}
+
+ol.rules{margin:0;padding-left:1.2em}
+ol.rules li{margin-bottom:.6em}
+
+.shots{display:flex;gap:14px;overflow-x:auto;padding:4px 0 14px;scroll-snap-type:x mandatory}
+.shots img{
+  /* height:auto é obrigatório: os atributos width/height do <img> são 1080x1920 e,
+     sem ele, o CSS ajusta só a largura e a imagem sai com 1920px de altura. */
+  width:190px;height:auto;flex:0 0 auto;border-radius:16px;border:1px solid var(--line);
+  scroll-snap-align:center;background:var(--surface);
+}
+
+details{border-top:1px solid var(--line);padding:14px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;color:var(--muted);font-weight:400}
+details[open] summary::after{content:"−"}
+details p{margin:.7em 0 0;color:var(--muted);font-size:15px}
+
+footer{padding:40px 0 60px;text-align:center;color:var(--muted);font-size:14px}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="logo" aria-hidden="true">🐱 🦊 🐼</div>
+  <h1>Jogo dos Pontinhos</h1>
+  <p class="sub">Ligue dois pontinhos, feche um quadradinho, jogue de novo. Quem tiver mais quadradinhos no fim, ganha.</p>
+
+  <div class="cta">
+    <a class="btn btn-main" href="jogar/">▶ Jogar agora, no navegador</a>
+    <a class="btn btn-alt" href="https://play.google.com/store/apps/details?id=com.vanecaetano.pontinhos">📱 Baixar no Android</a>
+  </div>
+  <p class="note">Grátis · sem cadastro · sem digitar nada · funciona no celular e no computador</p>
+</header>
+
+<main>
+<section class="wrap">
+  <h2>Como se joga</h2>
+  <div class="card">
+    <ol class="rules">
+      <li>Os jogadores se revezam <strong>ligando dois pontinhos vizinhos</strong>, com um risquinho na horizontal ou na vertical.</li>
+      <li>Quem completar o quarto lado de um quadradinho <strong>ganha o quadradinho</strong> — ele é marcado com o seu bichinho.</li>
+      <li>Quem fecha um quadradinho <strong>joga de novo</strong>. Dá para fechar vários seguidos.</li>
+      <li>Quando não sobra nenhum risquinho, vence quem tiver <strong>mais quadradinhos</strong>.</li>
+    </ol>
+    <p style="margin:1.2em 0 0;color:var(--muted);font-size:15px">É o mesmo jogo que se faz no caderno da escola. Em outros países ele é conhecido como <em>dots and boxes</em>, <em>timbiriche</em> ou <em>jogo dos quadradinhos</em>.</p>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Três jeitos de jogar</h2>
+  <div class="grid">
+    <div class="card">
+      <span class="emoji" aria-hidden="true">🤖</span>
+      <h3>Sozinho, contra o robô</h3>
+      <p>Três níveis. O Fácil deixa você ganhar, o Difícil joga a estratégia de verdade do jogo — e é osso duro.</p>
+    </div>
+    <div class="card">
+      <span class="emoji" aria-hidden="true">👦👧</span>
+      <h3>Com um amigo, no mesmo aparelho</h3>
+      <p>Dois jogadores revezando no mesmo celular. Sem internet, sem segundo aparelho, sem cadastro.</p>
+    </div>
+    <div class="card">
+      <span class="emoji" aria-hidden="true">🌐</span>
+      <h3>Online, até 4 jogadores</h3>
+      <p>Cada sala tem um código de três bichinhos, tipo 🦊🐼⭐, fácil de falar em voz alta para o amigo entrar.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Como é o jogo</h2>
+  <div class="shots">
+    <img src="img/1-jogo.png" width="1080" height="1920" loading="lazy" alt="Tabuleiro do jogo dos pontinhos com risquinhos coloridos e quadradinhos marcados com bichinhos">
+    <img src="img/2-modos.png" width="1080" height="1920" loading="lazy" alt="Tela de escolha: jogar sozinho contra o robô ou com um amigo">
+    <img src="img/3-online.png" width="1080" height="1920" loading="lazy" alt="Sala online com código de três bichinhos para os amigos entrarem">
+    <img src="img/4-colecao.png" width="1080" height="1920" loading="lazy" alt="Coleção de bichinhos e canetas coloridas para escolher">
+    <img src="img/5-vitoria.png" width="1080" height="1920" loading="lazy" alt="Tela de vitória com confete e o placar da partida">
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Perguntas frequentes</h2>
+
+  <details>
+    <summary>Precisa instalar alguma coisa?</summary>
+    <p>Não. O botão "Jogar agora" abre o jogo direto no navegador, no celular ou no computador. A versão para Android existe para quem quiser jogar sem abrir o navegador e também offline.</p>
+  </details>
+
+  <details>
+    <summary>É grátis mesmo?</summary>
+    <p>Sim. No navegador não há nada a pagar e nenhum anúncio. O aplicativo Android é gratuito e exibe anúncios.</p>
+  </details>
+
+  <details>
+    <summary>Dá para jogar duas pessoas no mesmo celular?</summary>
+    <p>Dá, e é o modo mais usado. As duas pessoas se revezam tocando na mesma tela — não precisa de internet nem de um segundo aparelho.</p>
+  </details>
+
+  <details>
+    <summary>Precisa criar conta ou digitar nome?</summary>
+    <p>Não. Até no modo online o apelido é sorteado — algo como "Raposa Foguete". Ninguém digita texto em lugar nenhum do jogo.</p>
+  </details>
+
+  <details>
+    <summary>Serve para que idade?</summary>
+    <p>Foi feito para crianças de 6 a 12 anos, com visual grande e colorido e sem nada para ler além do essencial. Adulto que jogava no caderno também se diverte, principalmente contra o robô no nível Difícil.</p>
+  </details>
+
+  <details>
+    <summary>Em quais idiomas está?</summary>
+    <p>Português, inglês, espanhol, hindi e indonésio. O jogo escolhe sozinho pelo idioma do aparelho, e dá para trocar no botão 🌐 do menu.</p>
+  </details>
+</section>
+</main>
+
+<footer class="wrap">
+  <p><a href="jogar/">Jogar no navegador</a> · <a href="https://play.google.com/store/apps/details?id=com.vanecaetano.pontinhos">Baixar no Android</a></p>
+  <p>Feito por VCodex</p>
+</footer>
+
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"VideoGame",
+  "name":"Jogo dos Pontinhos",
+  "alternateName":["Dots and Boxes","Timbiriche","Jogo dos Quadradinhos"],
+  "url":"https://vanecaetano.github.io/pontinhos/",
+  "description":"Jogo dos pontinhos para crianças de 6 a 12 anos. Jogue no navegador ou no Android, sozinho contra o robô, com um amigo no mesmo celular, ou online com até 4 jogadores.",
+  "inLanguage":["pt-BR","en","es","hi","id"],
+  "genre":["Puzzle","Estratégia","Infantil"],
+  "playMode":["SinglePlayer","CoOp","MultiPlayer"],
+  "numberOfPlayers":{"@type":"QuantitativeValue","minValue":1,"maxValue":4},
+  "gamePlatform":["Web browser","Android"],
+  "applicationCategory":"GameApplication",
+  "operatingSystem":"Any",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"Precisa instalar alguma coisa?","acceptedAnswer":{"@type":"Answer","text":"Não. O jogo abre direto no navegador, no celular ou no computador. A versão para Android existe para quem quiser jogar offline."}},
+    {"@type":"Question","name":"É grátis?","acceptedAnswer":{"@type":"Answer","text":"Sim. No navegador não há nada a pagar e nenhum anúncio. O aplicativo Android é gratuito e exibe anúncios."}},
+    {"@type":"Question","name":"Dá para jogar duas pessoas no mesmo celular?","acceptedAnswer":{"@type":"Answer","text":"Dá. As duas pessoas se revezam tocando na mesma tela, sem internet e sem um segundo aparelho."}},
+    {"@type":"Question","name":"Precisa criar conta?","acceptedAnswer":{"@type":"Answer","text":"Não. Até no modo online o apelido é sorteado. Ninguém digita texto em lugar nenhum do jogo."}},
+    {"@type":"Question","name":"Serve para que idade?","acceptedAnswer":{"@type":"Answer","text":"Foi feito para crianças de 6 a 12 anos, com visual grande e colorido."}}
+  ]
+}
+</script>
+
+</body>
+</html>

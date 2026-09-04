@@ -1,0 +1,510 @@
+:root {
+  --bg1: #F3ECFB; --bg2: #E9F5F1; --bg3: #FDEFE6;
+  /* fundo da coluna do app — precisa de par escuro, senão texto claro cai em fundo claro */
+  --app1: #FBF5FF; --app2: #EFFAF5; --app3: #FFF4EC;
+  --surface: #FFFFFF; --ink: #4C4560; --muted: #9C95AC; --line: #ECE6F3;
+  --accent: #8C6FE0;
+  --shadow: 0 20px 46px -22px rgba(90,60,140,.4);
+
+  /* players / pens — bright, same in both themes (kids world) */
+  --pen1: #4F9BEB; --pen1-soft: color-mix(in srgb, var(--pen1) 22%, #ffffff);
+  --pen2: #F07AA6; --pen2-soft: color-mix(in srgb, var(--pen2) 22%, #ffffff);
+  --pen3: #34B58F; --pen3-soft: color-mix(in srgb, var(--pen3) 22%, #ffffff);
+  --pen4: #A98BEA; --pen4-soft: color-mix(in srgb, var(--pen4) 22%, #ffffff);
+
+  /* paper board */
+  --paper1: #FFFDF8; --paper2: #FFF7EC; --paper-grid: #F0E7D4; --dot: #C7BCA0;
+  --pencil: rgba(120,105,80,.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg1: #241D33; --bg2: #1B2430; --bg3: #2A1F2A;
+    /* um tom acima do fundo do body, para a coluna do app ainda se destacar */
+    --app1: #2A2238; --app2: #1F2833; --app3: #2F2430;
+    --surface: #26212F; --ink: #EDE7F5; --muted: #A49CB6; --line: #362F44;
+    --accent: #B49BF0; --shadow: 0 24px 56px -26px rgba(0,0,0,.7);
+    /* Tabuleiro no escuro. A quadriculada decorativa (--paper-grid) tem de ficar QUASE
+       invisível: com o valor claro do tema claro ela virava uma chuva de pontinhos do
+       mesmo tom dos pontos jogáveis, e a criança não sabia onde dava para jogar.
+       Só o --dot (ponto jogável) continua claro e quente, para saltar do painel. */
+    --paper1: #221C30; --paper2: #1B2330; --paper-grid: #2E2740; --dot: #C7BCA0;
+    --pencil: rgba(232,222,248,.15);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; color: var(--ink);
+  background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 52%, var(--bg3) 100%);
+  background-attachment: fixed;
+  font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Nunito", system-ui, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased; line-height: 1.5;
+  min-height: 100dvh; display: flex; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- app shell (fills viewport, centered column on desktop) ---------- */
+.app {
+  position: relative; width: 100%; max-width: 480px; min-height: 100dvh;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: linear-gradient(180deg, var(--app1) 0%, var(--app2) 52%, var(--app3) 100%);
+  color: var(--ink); box-shadow: 0 0 60px -20px rgba(90,60,140,.3);
+  padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+}
+.scr { flex: 1; display: none; flex-direction: column; overflow-y: auto; }
+.scr.active { display: flex; }
+.scr::-webkit-scrollbar { width: 0; }
+
+/* ---------- MENU ---------- */
+#scr-menu { align-items: center; justify-content: center; padding: 40px 26px; gap: 8px; text-align: center; }
+.logo-badge { width: 100px; height: 100px; border-radius: 30px; background: var(--surface); box-shadow: 0 12px 26px -14px rgba(90,60,140,.5); display: grid; place-items: center; margin-bottom: 10px; }
+.menu-title { font-size: 34px; font-weight: 850; letter-spacing: -.02em; margin-top: 2px; }
+.menu-title .b { color: var(--pen1); } .menu-title .p { color: var(--pen2); }
+.menu-sub { font-size: 14.5px; color: var(--muted); font-weight: 600; margin: 4px 0 24px; }
+.btn-big { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 340px; padding: 17px 20px; border-radius: 22px; font-size: 19px; font-weight: 800; border: none; cursor: pointer; color: #fff; margin-bottom: 14px; transition: transform .08s ease; }
+.btn-big .ico { font-size: 27px; } .btn-big .arw { margin-left: auto; opacity: .85; font-size: 20px; }
+.btn-big:active { transform: translateY(3px); }
+.btn-big:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.btn-solo { background: linear-gradient(135deg, #6FD3B4, #46B896); box-shadow: 0 6px 0 #3AA184; }
+.btn-solo:active { box-shadow: 0 3px 0 #3AA184; }
+.btn-friend { background: linear-gradient(135deg, #B99BF0, #9D7BE6); box-shadow: 0 6px 0 #8261D4; }
+.btn-friend:active { box-shadow: 0 3px 0 #8261D4; }
+.btn-online { background: linear-gradient(135deg, #7FB5F5, #4F9BEB); box-shadow: 0 6px 0 #3E7FC4; }
+.btn-online:active { box-shadow: 0 3px 0 #3E7FC4; }
+.menu-foot { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 8px; max-width: 300px; }
+.sound-fab { position: absolute; top: calc(env(safe-area-inset-top) + 14px); right: 14px; z-index: 5; width: 44px; height: 44px; border-radius: 15px; border: 2px solid var(--line); background: var(--surface); font-size: 20px; cursor: pointer; box-shadow: 0 6px 14px -10px rgba(80,60,120,.6); }
+/* botão de idioma: mesmo formato do de som, logo à esquerda dele */
+.lang-fab { position: absolute; top: calc(env(safe-area-inset-top) + 14px); right: 66px; z-index: 5; width: 44px; height: 44px; border-radius: 15px; border: 2px solid var(--line); background: var(--surface); font-size: 20px; cursor: pointer; box-shadow: 0 6px 14px -10px rgba(80,60,120,.6); }
+.lang-fab:focus-visible, .sound-fab:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+/* lista do seletor: alvos grandes, um por linha — mão de criança e nomes longos (Bahasa Indonesia) */
+.lang-list { display: flex; flex-direction: column; gap: 8px; }
+.lang-opt { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font-size: 16px; font-weight: 800; cursor: pointer; text-align: left; }
+.lang-opt.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.lang-opt .check { margin-left: auto; opacity: 0; }
+.lang-opt.on .check { opacity: 1; }
+.menu-credit { font-size: 9.5px; color: var(--muted); font-weight: 600; opacity: .75; margin-top: 14px; }
+.g-foot .sound-mini { flex: 0 0 52px; font-size: 18px; padding: 13px 0; }
+
+/* ---------- SETUP ---------- */
+.setup-head { padding: 22px 20px 6px; display: flex; align-items: center; gap: 10px; }
+.back-btn { width: 38px; height: 38px; border-radius: 13px; border: none; background: var(--surface); box-shadow: 0 4px 10px -6px rgba(80,60,120,.5); font-size: 18px; cursor: pointer; color: var(--ink); }
+.setup-head h2 { font-size: 20px; font-weight: 850; margin: 0; }
+.setup-body { padding: 10px 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.field-label { font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.pslot { background: var(--surface); border-radius: 20px; padding: 14px; box-shadow: 0 8px 20px -14px rgba(80,60,120,.5); display: flex; align-items: center; gap: 13px; }
+.pslot .ava-btn { width: 60px; height: 60px; border-radius: 18px; border: 3px solid var(--line); background: #fff; font-size: 32px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; transition: transform .1s ease; }
+.pslot .ava-btn:active { transform: scale(.92); }
+.pslot.p1 .ava-btn { border-color: var(--pen1); background: var(--pen1-soft); }
+.pslot.p2 .ava-btn { border-color: var(--pen2); background: var(--pen2-soft); }
+.pslot.p3 .ava-btn { border-color: var(--pen3); background: var(--pen3-soft); }
+.pslot.p4 .ava-btn { border-color: var(--pen4); background: var(--pen4-soft); }
+.pslot .info { flex: 1; min-width: 0; }
+.pslot .nm-in { width: 100%; border: none; background: transparent; font: inherit; font-size: 18px; font-weight: 800; color: var(--ink); padding: 2px 0; border-bottom: 2px dashed var(--line); }
+.pslot .nm-in:focus { outline: none; border-bottom-color: var(--accent); }
+.pslot .tip { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-top: 4px; }
+.pen-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 9px; }
+.pen-dot { width: 27px; height: 27px; border-radius: 50%; border: 2px solid rgba(0,0,0,.08); padding: 0; cursor: pointer; transition: transform .1s ease; }
+.pen-dot:active { transform: scale(.88); }
+.pen-dot.on { transform: scale(1.12); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--ink); }
+.pen-dot:disabled { opacity: .26; cursor: not-allowed; }
+.pen-dot:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.pill-row { display: flex; gap: 8px; }
+.pill { flex: 1; text-align: center; padding: 12px 6px; border-radius: 14px; font-size: 14px; font-weight: 800; border: 2px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.pill small { display: block; font-size: 10.5px; font-weight: 700; opacity: .8; }
+.pill.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+/* toggle "incluir o robô" */
+.robo-toggle { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 13px 15px; border-radius: 16px; background: var(--surface); border: 2px solid var(--line); box-shadow: 0 8px 20px -16px rgba(80,60,120,.5); cursor: pointer; user-select: none; }
+.robo-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.robo-toggle .rt-txt { flex: 1; font-size: 14.5px; font-weight: 800; }
+.robo-toggle .rt-txt small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+.robo-toggle .rt-switch { flex-shrink: 0; width: 46px; height: 27px; border-radius: 999px; background: var(--line); position: relative; transition: background .2s ease; }
+.robo-toggle .rt-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: transform .2s ease; }
+.robo-toggle input:checked ~ .rt-switch { background: var(--pen3); }
+.robo-toggle input:checked ~ .rt-switch::after { transform: translateX(19px); }
+.robo-toggle:has(input:checked) { border-color: var(--pen3); }
+.robo-toggle input:focus-visible ~ .rt-switch { outline: 3px solid var(--ink); outline-offset: 2px; }
+.btn-start { margin-top: 6px; width: 100%; padding: 17px; border-radius: 20px; border: none; font-size: 19px; font-weight: 850; color: #fff; cursor: pointer; background: linear-gradient(135deg, #FFC46B, #F6A63C); box-shadow: 0 6px 0 #E08E27; transition: transform .08s ease; }
+.btn-start:active { transform: translateY(3px); box-shadow: 0 3px 0 #E08E27; }
+
+/* Mesmo problema da sala (ver `.room-foot`): com 12 canetas a `.pen-row` quebra em várias
+   linhas por jogador, e com o banner ocupando o rodapé o "Começar!" saía da tela — a criança
+   tinha de rolar para achar o botão que inicia o jogo. A lista rola e o botão fica ancorado.
+   ⚠️ Ao contrário da sala, este rodapé é TRANSPARENTE: aqui embaixo dele ainda vem o espaço
+   reservado do banner, e a faixa opaca da `.room-foot` somada a esse espaço virava um bloco
+   cinza enorme no pé da tela. Em vez da faixa, o conteúdo que passa por trás do botão some
+   num degradê (a máscara no `.setup-body`), que funciona sobre qualquer fundo. */
+#scr-setup { overflow: hidden; }
+/* `safe center`: quando sobra espaço (solo numa tela alta) os blocos ficam no meio, com
+   folga em cima e embaixo, em vez de amontoados no topo; quando falta, o `safe` desliga o
+   centro e volta ao topo — sem `safe` o conteúdo que estoura seria cortado por cima e o
+   primeiro card ficaria inalcançável no scroll. */
+#scr-setup .setup-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; gap: 14px;
+  padding: 6px 20px 4px; justify-content: safe center; }
+#scr-setup .setup-body::-webkit-scrollbar { width: 0; }
+/* o corpo é flex-column: sem isto os blocos ENCOLHEM quando falta espaço (flex-shrink: 1),
+   e em vez de rolar a tela aparece espremida — cards achatados, texto colado. */
+#scr-setup .setup-body > * { flex-shrink: 0; }
+#scr-setup .setup-body {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+}
+/* ⚠️ SEM `env(safe-area-inset-bottom)` aqui: o `.app` já reserva a inset (e, com banner,
+   inset + --ad-h). Somar de novo criava uma tarja morta de ~50 px sob o botão — era metade
+   do "bloco cinza gigante" no pé da tela; a outra metade era o fundo opaco da `.room-foot`. */
+.setup-foot { flex-shrink: 0; padding: 4px 20px 8px; }
+
+/* ...e encolhemos a preparação, para o caso comum caber inteiro sem rolar. Encolher o
+   bichinho e as bordas do card alarga a `.info`, e é isso que faz as 12 canetas caberem
+   em 2 linhas em vez de 3 — o maior ganho vem daí, não dos poucos pixels do card.
+   ⚠️ A bolinha da caneta (.pen-dot, 27px) NÃO encolhe: já é alvo de toque pequeno para
+   mão de criança de 8 anos, e 12 canetas não cabem numa linha só de jeito nenhum. */
+#scr-setup .setup-head { padding: 14px 20px 4px; }
+#scr-setup .pslot { padding: 11px; gap: 11px; }
+#scr-setup .pslot .ava-btn { width: 50px; height: 50px; border-radius: 15px; font-size: 27px; }
+#scr-setup .pen-row { gap: 8px; margin-top: 8px; }
+#scr-setup .field-label { margin-bottom: 6px; }
+#scr-setup .robo-toggle { margin-top: 8px; padding: 11px 14px; }
+
+/* ---------- GAME ---------- */
+.g-top { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 22px 16px 8px; }
+.pcard { min-width: 0; background: var(--surface); border-radius: 18px; padding: 11px; box-shadow: 0 8px 18px -14px rgba(80,60,120,.5); display: flex; align-items: center; gap: 10px; border: 2.5px solid transparent; transition: border-color .2s, transform .2s; }
+.pcard.span2 { grid-column: 1 / -1; }
+.pcard .av { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 23px; flex-shrink: 0; }
+.pcard.p1 .av { background: var(--pen1-soft); } .pcard.p2 .av { background: var(--pen2-soft); } .pcard.p3 .av { background: var(--pen3-soft); } .pcard.p4 .av { background: var(--pen4-soft); }
+.pcard-info { min-width: 0; }
+.pcard .nm { font-size: 13px; font-weight: 800; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; }
+.pcard .sc { font-size: 22px; font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums; }
+.pcard.p1.turn { border-color: var(--pen1); transform: translateY(-2px); }
+.pcard.p2.turn { border-color: var(--pen2); transform: translateY(-2px); }
+.pcard.p3.turn { border-color: var(--pen3); transform: translateY(-2px); }
+.pcard.p4.turn { border-color: var(--pen4); transform: translateY(-2px); }
+.pcard.p1.turn .sc { color: var(--pen1); } .pcard.p2.turn .sc { color: var(--pen2); } .pcard.p3.turn .sc { color: var(--pen3); } .pcard.p4.turn .sc { color: var(--pen4); }
+.pcard.out { opacity: .45; filter: grayscale(.6); }
+
+.turn-banner { text-align: center; font-size: 14.5px; font-weight: 800; padding: 4px 16px 8px; }
+.turn-banner .who1 { color: var(--pen1); } .turn-banner .who2 { color: var(--pen2); } .turn-banner .who3 { color: var(--pen3); } .turn-banner .who4 { color: var(--pen4); }
+.turn-timer { margin: 0 auto 8px; width: fit-content; padding: 3px 14px; border-radius: 999px; font-size: 13px; font-weight: 850; font-variant-numeric: tabular-nums;
+  background: #FFF3E4; color: #B4652A; border: 2px solid #F2C89B; }
+.turn-timer.urgent { background: #FDE7E7; color: #C0392B; border-color: #F2AFAF; animation: timerBlink .5s ease-in-out infinite alternate; }
+@keyframes timerBlink { from { transform: scale(1); } to { transform: scale(1.1); } }
+.progress { height: 10px; margin: 0 16px 12px; border-radius: 999px; overflow: hidden; display: flex; background: #EDE6DA; }
+.progress > div { transition: width .35s ease; }
+.progress .s1 { background: var(--pen1); }
+.progress .s2 { background: var(--pen2); }
+.progress .s3 { background: var(--pen3); }
+.progress .s4 { background: var(--pen4); }
+
+#scr-game { overflow: hidden; }
+.board-wrap { margin: 0 16px; position: relative; border-radius: 20px; padding: 12px;
+  flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center;
+  /* ⚠️ As duas camadas numa declaração só. Quando eram `background:` e depois
+     `background-image:`, a segunda SUBSTITUÍA a imagem da primeira: o degradê do papel
+     nunca chegava a pintar e o painel ficava transparente, mostrando o fundo do `.app`.
+     No tema claro ninguém via (o fundo já é creme); no escuro virava um campo escuro
+     coberto de pontinhos claros, sem borda — daí a confusão sobre onde dava para jogar. */
+  background-image: radial-gradient(var(--paper-grid) 1.1px, transparent 1.2px),
+                    linear-gradient(160deg, var(--paper1), var(--paper2));
+  background-size: 20px 20px, auto;
+  box-shadow: inset 0 0 0 1.5px rgba(120,100,70,.08), 0 10px 22px -14px rgba(120,90,50,.5); }
+.board-wrap.big { margin: 0 8px; padding: 8px; }   /* tabuleiro grande: borda-a-borda */
+.board-wrap svg { display: block; touch-action: manipulation; }  /* tamanho definido por fitBoard() */
+/* Só o .hit recebe toque. Sem isto, o tracinho cinza e os pontinhos — pintados DEPOIS
+   do .hit no render() — engolem o toque em cima da linha, que é justo onde se mira. */
+#board > * { pointer-events: none; }
+#board > .hit { pointer-events: all; }   /* precisa do #board: senão perde para a regra acima */
+.hit { cursor: pointer; }
+.edge-drawn { stroke-linecap: round; }
+.edge-halo { stroke-linecap: round; fill: none; animation: haloPulse 1.1s ease-in-out infinite; }
+@keyframes haloPulse { 0%, 100% { opacity: .18; stroke-width: 9; } 50% { opacity: .5; stroke-width: 15; } }
+.edge-faint { stroke: var(--pencil); stroke-width: 3; stroke-linecap: round; }
+.hit:hover + .edge-faint { stroke: color-mix(in srgb, var(--pen1) 45%, var(--pencil)); stroke-width: 5; }
+
+.g-foot { display: flex; gap: 10px; padding: 14px 16px 20px; }
+.g-foot button { flex: 1; padding: 13px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); font: inherit; font-size: 14px; font-weight: 800; color: var(--muted); cursor: pointer; }
+.g-foot button:active { transform: translateY(1px); }
+
+/* ---------- WIN ---------- */
+.win { position: absolute; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 30px; text-align: center;
+  background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(248,242,255,.92)); backdrop-filter: blur(4px); }
+.win.show { display: flex; }
+.win .cup { font-size: 68px; animation: bounce .6s ease; }
+@keyframes bounce { 0% { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+.win .wtitle { font-size: 27px; font-weight: 850; text-wrap: balance; }
+.win .wsc { font-size: 16px; color: var(--muted); font-weight: 700; }
+.win .wbtns { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px; margin-top: 16px; }
+.win .again { padding: 16px; border-radius: 18px; border: none; font-size: 18px; font-weight: 850; color: #fff; cursor: pointer; background: linear-gradient(135deg, #6FD3B4, #46B896); box-shadow: 0 5px 0 #3AA184; }
+.win .again:active { transform: translateY(2px); box-shadow: 0 3px 0 #3AA184; }
+.win .tomenu { padding: 13px; border-radius: 16px; border: 2px solid var(--line); background: rgba(255,255,255,.7); font-size: 15px; font-weight: 800; color: var(--muted); cursor: pointer; }
+.confetti { position: absolute; top: -14px; width: 10px; height: 14px; border-radius: 3px; z-index: 9; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .9; } }
+
+/* ---------- ONLINE: lobby e sala ---------- */
+.list { display: flex; flex-direction: column; gap: 9px; }
+.empty { text-align: center; color: var(--muted); font-weight: 600; font-size: 13px; padding: 16px 12px; border: 2px dashed var(--line); border-radius: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { background: var(--surface); border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: 700; box-shadow: 0 4px 10px -8px rgba(80,60,120,.5); }
+.chip.me { border: 2px solid var(--accent); color: var(--accent); }
+.room-item { background: var(--surface); border-radius: 16px; padding: 11px 13px; display: flex; align-items: center; gap: 11px; box-shadow: 0 8px 18px -14px rgba(80,60,120,.5); }
+.room-item .ri-av { width: 42px; height: 42px; border-radius: 13px; background: var(--pen1-soft); display: grid; place-items: center; font-size: 24px; flex-shrink: 0; }
+.room-item .ri-txt { flex: 1; min-width: 0; }
+.room-item .ri-nm { font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-item .ri-meta { font-size: 12px; color: var(--muted); font-weight: 600; }
+.room-item button { border: none; border-radius: 12px; padding: 10px 15px; font: inherit; font-size: 14px; font-weight: 800; color: #fff; background: var(--accent); cursor: pointer; flex-shrink: 0; }
+.room-item button:disabled { opacity: .38; cursor: not-allowed; }
+.room-info { text-align: center; font-size: 13px; color: var(--muted); font-weight: 700; }
+.rnick { font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex-shrink: 0; }
+.badge-ready { font-size: 11px; font-weight: 800; color: #fff; background: var(--pen3); border-radius: 999px; padding: 4px 10px; }
+.badge-wait { font-size: 11px; font-weight: 800; color: var(--muted); background: transparent; border: 2px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+.badge-owner { font-size: 11px; font-weight: 800; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-radius: 999px; padding: 4px 10px; }
+.kick-btn { border: none; background: #F9E7EC; color: #C25B7C; width: 30px; height: 30px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
+#readyBtn.ok { background: linear-gradient(135deg, #B9C3CE, #93A1B0); box-shadow: 0 6px 0 #7C8996; }
+#startMatchBtn:disabled { filter: saturate(.35); opacity: .75; cursor: not-allowed; }
+
+/* A sala pode ter 4 jogadores + código + placar e não cabe na tela. O botão de ação NÃO
+   pode depender de scroll: quem entra não vê que precisa apertar "Pronto" e o dono não vê
+   o "Começar". Então a lista rola e o rodapé fica ancorado embaixo, sempre visível. */
+#scr-room { overflow: hidden; }
+#scr-room .setup-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; gap: 12px; padding-bottom: 6px; }
+#scr-room .setup-body::-webkit-scrollbar { width: 0; }
+.room-foot { flex-shrink: 0; padding: 10px 20px calc(14px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(6px);
+  border-top: 1.5px solid var(--line); box-shadow: 0 -8px 20px -18px rgba(80,60,120,.7); }
+.room-foot .btn-start, .setup-foot .btn-start { margin-top: 0; }
+
+/* ...e ainda assim encolhemos a sala, para o caso comum caber inteiro sem rolar */
+#scr-room .list { gap: 8px; }
+#scr-room .pslot { padding: 11px; gap: 11px; }
+#scr-room .pslot .ava-btn { width: 50px; height: 50px; border-radius: 15px; font-size: 27px; }
+#scr-room .code-box { padding: 9px 14px; }
+#scr-room .code-box .cb-emojis { font-size: 27px; margin: 2px 0 0; }
+#scr-room .empty { padding: 10px 12px; }
+
+/* quem acabou de entrar precisa reparar no botão: ele pulsa até virar "pronto" */
+#readyBtn:not(.ok) { animation: readyPulse 1.6s ease-in-out infinite; }
+@keyframes readyPulse { 0%, 100% { transform: none; } 50% { transform: scale(1.025); } }
+
+/* modal (mesmo esquema do overlay .win) */
+.modal { z-index: 20; }
+.modal .modal-body { width: 100%; max-width: 330px; background: var(--surface); border-radius: 20px; padding: 18px; box-shadow: var(--shadow); text-align: left; }
+
+/* aviso de queda na partida */
+.net-banner { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 12px); z-index: 15; max-width: 88%; text-align: center; background: #FFF3E4; color: #B4652A; border: 2px solid #F2C89B; padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 800; box-shadow: 0 10px 24px -12px rgba(120,80,30,.5); }
+
+/* personagem sorteado (sem digitação) */
+.gen-nick { font-size: 19px; font-weight: 850; letter-spacing: -.01em; }
+.dice-btn { width: 48px; height: 48px; border-radius: 15px; border: 2px solid var(--line); background: var(--surface); font-size: 25px; cursor: pointer; flex-shrink: 0; transition: transform .1s ease; }
+.dice-btn:active { transform: rotate(-18deg) scale(.9); }
+
+/* código falável da sala */
+.code-box { background: var(--surface); border: 2px dashed var(--accent); border-radius: 18px; padding: 12px 14px; text-align: center; }
+.code-box .cb-label { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.code-box .cb-emojis { font-size: 34px; letter-spacing: .18em; margin: 4px 0 2px; }
+.cb-words { font-size: 12.5px; color: var(--muted); font-weight: 700; text-align: center; }
+.btn-code { margin-top: 10px; width: 100%; padding: 13px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); font: inherit; font-size: 14.5px; font-weight: 800; color: var(--accent); cursor: pointer; }
+.btn-code:active { transform: translateY(1px); }
+
+/* teclado de bichinhos (entrar com código) */
+.code-display { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 6px 0 8px; }
+.code-slot { width: 48px; height: 48px; border-radius: 14px; border: 2px dashed var(--line); display: grid; place-items: center; font-size: 26px; background: color-mix(in srgb, var(--line) 30%, var(--surface)); }
+.code-slot.filled { border-style: solid; border-color: var(--accent); background: var(--surface); }
+.code-del { width: 42px; height: 42px; border-radius: 13px; border: 2px solid var(--line); background: var(--surface); font-size: 17px; font-weight: 800; color: var(--muted); cursor: pointer; }
+.emoji-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+.emoji-pad .pad-btn { aspect-ratio: 1; border-radius: 13px; border: 2px solid var(--line); background: var(--surface); font-size: 24px; cursor: pointer; transition: transform .08s ease; }
+.emoji-pad .pad-btn:active { transform: scale(.88); }
+
+/* placar da sala */
+.room-wins { text-align: center; font-size: 13px; font-weight: 800; background: color-mix(in srgb, #F6C64B 18%, var(--surface)); border: 2px solid color-mix(in srgb, #F6C64B 55%, var(--surface)); border-radius: 14px; padding: 9px 12px; }
+
+/* dado 3D de abertura */
+.dice-overlay { position: absolute; inset: 0; z-index: 25; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 34px; text-align: center; padding: 30px;
+  background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.55), rgba(238,228,255,.94)); backdrop-filter: blur(4px); }
+.dice-overlay.show { display: flex; }
+.dice-title { font-size: 17px; font-weight: 850; color: var(--accent); animation: diceTitlePulse 1.1s ease-in-out infinite; }
+@keyframes diceTitlePulse { 0%, 100% { opacity: .55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+.dice-scene { perspective: 900px; perspective-origin: 50% 30%; }
+.dice-fly { width: 96px; height: 96px; transform-style: preserve-3d; }
+.dice-fly.fly { animation: diceFly 2.3s cubic-bezier(.2,.62,.28,1) both; }
+@keyframes diceFly {
+  0%   { transform: translateY(-44vh) translateZ(-780px) scale(.3); opacity: 0; }
+  14%  { opacity: 1; }
+  78%  { transform: translateY(3vh) translateZ(60px) scale(1.12); opacity: 1; }
+  100% { transform: translateY(0) translateZ(0) scale(1); opacity: 1; }
+}
+.dice-fly.land { animation: diceLand .55s cubic-bezier(.3,1.6,.4,1) both; }
+@keyframes diceLand {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.22, .78); }
+  70%  { transform: scale(.92, 1.1); }
+  100% { transform: scale(1); }
+}
+.dice-cube { width: 96px; height: 96px; position: relative; transform-style: preserve-3d; }
+.dice-face { position: absolute; inset: 0; border-radius: 18px; background: linear-gradient(145deg, #ffffff, #EDE7F8);
+  border: 2.5px solid #D9CEF0; box-shadow: inset 0 0 14px rgba(140,111,224,.14);
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 13px; backface-visibility: hidden; }
+.dice-face .pip { align-self: center; justify-self: center; width: 15px; height: 15px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7A5FD0, #52418F); box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
+.dice-result { min-height: 58px; font-size: 21px; font-weight: 850; color: var(--ink); text-wrap: balance; }
+.dice-result b { color: var(--accent); font-size: 26px; }
+.dice-result.pop { animation: dicePop .5s cubic-bezier(.3,1.7,.5,1) both; }
+@keyframes dicePop { 0% { transform: scale(.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+/* toast */
+.toast { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 26px); left: 50%; transform: translateX(-50%); z-index: 30; max-width: 86%; text-align: center; background: var(--ink); color: var(--bg1); padding: 11px 18px; border-radius: 16px; font-size: 14px; font-weight: 700; opacity: 0; transition: opacity .25s ease; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+/* ---------- anúncios (ver MONETIZACAO.md) ---------- */
+/* O banner nativo fica por cima da webview, no rodapé: reservamos a altura dele para
+   o layout não ficar escondido. A classe é ligada/desligada por js/ads.js. */
+.app.has-ad { padding-bottom: calc(env(safe-area-inset-bottom) + var(--ad-h, 56px)); }
+
+/* os overlays usam inset:0 e ignoram o padding do .app — reservar o banner neles também */
+.app.has-ad .win,
+.app.has-ad .dice-overlay { padding-bottom: calc(30px + env(safe-area-inset-bottom) + var(--ad-h, 56px)); }
+
+/* folga entre os botões do rodapé do jogo e o banner, para não ter toque sem querer.
+   Subiu de 26 para 34 px junto com o rótulo do banner: o dedo da criança precisa de uma
+   faixa morta entre o último botão do jogo e a primeira linha do anúncio. */
+.app.has-ad .g-foot { padding-bottom: 34px; }
+
+/* ⚠️ Rotulagem de anúncio — exigência do programa Famílias, e o motivo da reprovação do
+   versionCode 7 ("Unclear ads/offers"). O selo .ad-tag NÃO é decorativo: é ele que separa
+   anúncio de conteúdo do jogo. Não trocar por emoji, não esconder, não deixar de traduzir. */
+.ad-tag { display: inline-block; background: #2C2338; color: #FFF; border-radius: 6px;
+  padding: 2px 7px; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; line-height: 1.5; }
+.ad-tag.big { font-size: 12px; padding: 3px 10px; margin-bottom: 8px; }
+.ad-legend { display: flex; align-items: center; justify-content: center; gap: 7px; flex-wrap: wrap;
+  margin-top: 8px; font-size: 11.5px; font-weight: 700; color: var(--muted); text-align: center; }
+
+/* Rótulo do banner: encostado na borda de cima da faixa reservada ao anúncio, por isso o
+   mesmo cálculo do padding do .app. z-index 28 fica ACIMA dos overlays (.win 10,
+   .dice-overlay 25) e abaixo do toast (30) — o rótulo não pode sumir sob a tela de vitória,
+   que é justamente onde a oferta de vídeo aparece. */
+.ad-slot-label { position: absolute; left: 0; right: 0; z-index: 28; pointer-events: none;
+  bottom: calc(env(safe-area-inset-bottom) + var(--ad-h, 56px));
+  border-top: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  background: color-mix(in srgb, var(--ink) 7%, var(--surface)); color: var(--muted);
+  padding: 2px 10px; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; text-align: center; }
+
+/* oferta opcional de vídeo premiado no fim da partida.
+   ⚠️ Sem 🎁 e sem cara de prêmio do jogo: o card É a entrada de um anúncio e diz isso. */
+.ad-offer { margin-top: 14px; max-width: 250px; width: 100%; padding: 11px 14px; border-radius: 16px; cursor: pointer;
+  border: 2px dashed color-mix(in srgb, #F6C64B 70%, var(--surface)); background: color-mix(in srgb, #F6C64B 16%, var(--surface));
+  font: inherit; font-size: 13.5px; font-weight: 800; color: var(--ink); text-wrap: balance; }
+.ad-offer:active { transform: translateY(1px); }
+.ad-offer .em { display: block; font-size: 21px; letter-spacing: .14em; margin-bottom: 3px; }
+.ad-offer .ad-tag { display: block; width: fit-content; margin: 0 auto 6px; }
+.ad-modal-text { font-size: 14.5px; font-weight: 700; color: var(--ink); text-align: center; }
+
+/* vitrine por categoria: o que ainda não é seu vira ❓ e custa um vídeo premiado */
+.emoji-pad .pad-head { grid-column: 1 / -1; font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+.emoji-pad .pad-count { margin-left: auto; letter-spacing: 0; text-transform: none; }
+.emoji-pad .pad-btn.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.emoji-pad .pad-btn.locked { position: relative; border-style: dashed; opacity: .8;
+  background: color-mix(in srgb, #F6C64B 10%, var(--surface)); }
+/* O canto do ❓ mostra a 1ª letra do selo traduzido (--ad-initial, posto por game.js) sobre
+   fundo escuro: um 🎬 sozinho não diz "anúncio", e o botão é pequeno demais para a palavra
+   inteira — a palavra vem na legenda .ad-legend logo acima da vitrine. */
+.emoji-pad .pad-btn.locked::after { content: var(--ad-initial, 'A'); position: absolute; right: 2px; bottom: 2px;
+  min-width: 13px; height: 13px; border-radius: 4px; background: #2C2338; color: #FFF;
+  font-size: 9px; font-weight: 800; line-height: 13px; text-align: center; }
+#avaModal .modal-body { max-height: 62vh; overflow-y: auto; }
+.pen-dot.locked { opacity: .45; font-size: 12px; line-height: 1; padding: 0; }
+
+/* ============ texto dos overlays claros ============
+   ⚠️ Os overlays de vitória (.win) e do dado (.dice-overlay) têm fundo CLARO FIXO nos dois
+   temas — são comemorativos e sempre claros. Por isso o texto deles NÃO pode seguir `--ink`:
+   no tema escuro `--ink` vira quase branco (#EDE7F5) e o texto some no branco do overlay.
+   Era esse o "cinza apagado que nem aparece" na tela do ganhador. Cores fixas e escuras aqui
+   são de propósito; se um dia o overlay ganhar versão escura, estas regras vêm junto.
+   Estas regras precisam ficar DEPOIS de `.dice-result` (linha ~284), que também usa --ink. */
+.win, .dice-overlay { color: #241C33; }
+.win .wtitle { color: #140F1C; }     /* o "Você venceu!" é a frase principal: quase preto */
+.win .wsc { color: #574E6E; }
+.win .tomenu { color: #453C5C; }
+.dice-result { color: #241C33; }
+.dice-title, .dice-result b { color: #6B4FCF; }   /* --accent é claro demais sobre branco */
+
+/* ============ canetas VIP (glitter) ============
+   As canetas de bônus com `fx` não pintam com cor chapada: o tabuleiro usa os gradientes
+   de <svg class="penfx-defs"> lá no index.html e o brilho corre pelo risquinho.
+   O truque da animação: as paradas do gradiente rodam a MESMA animação com atraso
+   negativo escalonado, então o pico de luz passa de uma parada para a seguinte. */
+
+/* o SVG de defs não pode ser display:none (deixa de servir de tinta em alguns motores) */
+.penfx-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Cor BASE de cada parada, em CSS e não em atributo. É o que aparece quando a animação
+   não roda — sem isto, `prefers-reduced-motion` (que zera toda animação lá embaixo)
+   deixaria as paradas sem stop-color e o risquinho sairia PRETO. */
+#gl-ouro    stop:nth-child(1), #gl-ouro    stop:nth-child(5) { stop-color: #B8860B; }
+#gl-ouro    stop:nth-child(2), #gl-ouro    stop:nth-child(4) { stop-color: #E8B33D; }
+#gl-ouro    stop:nth-child(3)                                { stop-color: #FFF3C4; }
+#gl-prata   stop:nth-child(1), #gl-prata   stop:nth-child(5) { stop-color: #7E8B9C; }
+#gl-prata   stop:nth-child(2), #gl-prata   stop:nth-child(4) { stop-color: #B9C6D6; }
+#gl-prata   stop:nth-child(3)                                { stop-color: #FFFFFF; }
+#gl-rosa    stop:nth-child(1), #gl-rosa    stop:nth-child(5) { stop-color: #C2156E; }
+#gl-rosa    stop:nth-child(2), #gl-rosa    stop:nth-child(4) { stop-color: #FF4FA3; }
+#gl-rosa    stop:nth-child(3)                                { stop-color: #FFD6EA; }
+#gl-galaxia stop:nth-child(1), #gl-galaxia stop:nth-child(5) { stop-color: #2E1F73; }
+#gl-galaxia stop:nth-child(2), #gl-galaxia stop:nth-child(4) { stop-color: #7B5BE8; }
+#gl-galaxia stop:nth-child(3)                                { stop-color: #D9C7FF; }
+#gl-arco stop:nth-child(1) { stop-color: #FF4D4D; } #gl-arco stop:nth-child(2) { stop-color: #FFA43D; }
+#gl-arco stop:nth-child(3) { stop-color: #FFE24D; } #gl-arco stop:nth-child(4) { stop-color: #4FD07A; }
+#gl-arco stop:nth-child(5) { stop-color: #4FA8F0; } #gl-arco stop:nth-child(6) { stop-color: #B76BE8; }
+
+/* pausado por padrão: game.js põe `fx-on` no body só quando alguém está com caneta VIP
+   em jogo — animar stop-color custa recálculo de estilo a cada quadro. */
+.penfx-defs stop { animation-duration: 2.4s; animation-timing-function: linear;
+  animation-iteration-count: infinite; animation-play-state: paused; }
+body.fx-on .penfx-defs stop { animation-play-state: running; }
+.penfx-defs stop:nth-child(1) { animation-delay: 0s; }
+.penfx-defs stop:nth-child(2) { animation-delay: -.48s; }
+.penfx-defs stop:nth-child(3) { animation-delay: -.96s; }
+.penfx-defs stop:nth-child(4) { animation-delay: -1.44s; }
+.penfx-defs stop:nth-child(5) { animation-delay: -1.92s; }
+/* o arco-íris tem 6 paradas: o passo é 2.4/6 para o ciclo fechar certinho */
+#gl-arco stop:nth-child(1) { animation-delay: 0s; }    #gl-arco stop:nth-child(2) { animation-delay: -.4s; }
+#gl-arco stop:nth-child(3) { animation-delay: -.8s; }  #gl-arco stop:nth-child(4) { animation-delay: -1.2s; }
+#gl-arco stop:nth-child(5) { animation-delay: -1.6s; } #gl-arco stop:nth-child(6) { animation-delay: -2s; }
+
+#gl-ouro    stop { animation-name: glOuro; }
+#gl-prata   stop { animation-name: glPrata; }
+#gl-rosa    stop { animation-name: glRosa; }
+#gl-galaxia stop { animation-name: glGalaxia; }
+#gl-arco    stop { animation-name: glArco; }
+
+@keyframes glOuro    { 0%,100% { stop-color:#B8860B; } 28% { stop-color:#E8B33D; } 44% { stop-color:#FFF7D9; } 60% { stop-color:#E8B33D; } }
+@keyframes glPrata   { 0%,100% { stop-color:#7E8B9C; } 28% { stop-color:#B9C6D6; } 44% { stop-color:#FFFFFF; } 60% { stop-color:#B9C6D6; } }
+@keyframes glRosa    { 0%,100% { stop-color:#C2156E; } 28% { stop-color:#FF4FA3; } 44% { stop-color:#FFE3F1; } 60% { stop-color:#FF4FA3; } }
+@keyframes glGalaxia { 0%,100% { stop-color:#2E1F73; } 28% { stop-color:#7B5BE8; } 44% { stop-color:#EDE3FF; } 60% { stop-color:#B98BF0; } }
+@keyframes glArco {
+  0%,100% { stop-color:#FF4D4D; } 17% { stop-color:#FFA43D; } 34% { stop-color:#FFE24D; }
+  50% { stop-color:#4FD07A; }     67% { stop-color:#4FA8F0; } 84% { stop-color:#B76BE8; }
+}
+
+/* --- a mesma caneta nos pedaços de HTML (bolinha da cor, placar, card) --- */
+.fx-ouro    { --fxg: linear-gradient(110deg,#B8860B 0%,#E8B33D 26%,#FFF7D9 43%,#E8B33D 60%,#B8860B 86%); }
+.fx-prata   { --fxg: linear-gradient(110deg,#7E8B9C 0%,#B9C6D6 26%,#FFFFFF 43%,#B9C6D6 60%,#7E8B9C 86%); }
+.fx-rosa    { --fxg: linear-gradient(110deg,#C2156E 0%,#FF4FA3 26%,#FFE3F1 43%,#FF4FA3 60%,#C2156E 86%); }
+.fx-galaxia { --fxg: linear-gradient(110deg,#2E1F73 0%,#7B5BE8 26%,#EDE3FF 43%,#B98BF0 60%,#2E1F73 86%); }
+.fx-arco    { --fxg: linear-gradient(110deg,#FF4D4D 0%,#FFA43D 18%,#FFE24D 34%,#4FD07A 52%,#4FA8F0 70%,#B76BE8 88%); }
+
+.pen-dot[class*="fx-"], .pen-em[class*="fx-"],
+.progress > [class*="fx-"], .pcard[class*="fx-"] .av {
+  background-image: var(--fxg);
+  background-size: 260% 100%;
+  animation: fxSlide 2.4s linear infinite;
+}
+@keyframes fxSlide { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+
+/* a bolinha da caneta no card de prêmio do fim de jogo */
+.pen-em { display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+  vertical-align: -4px; border: 2px solid rgba(255,255,255,.7); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+
+/* travada ainda tem que dar vontade: brilha mais que uma cor comum travada */
+.pen-dot.locked[class*="fx-"] { opacity: .8; text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
